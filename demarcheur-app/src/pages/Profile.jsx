@@ -7,8 +7,9 @@ import { User, Phone, Mail, LogOut, Save, CheckCircle2 } from 'lucide-react'
 
 export default function Profile() {
   const navigate  = useNavigate()
-  const user      = useAuthStore(s => s.user)
-  const signOut   = useAuthStore(s => s.signOut)
+  const user           = useAuthStore(s => s.user)
+  const refreshProfile = useAuthStore(s => s.refreshProfile)
+  const signOut        = useAuthStore(s => s.signOut)
 
   const [nom, setNom]         = useState(user?.user_metadata?.nom       ?? '')
   const [telephone, setTel]   = useState(user?.user_metadata?.telephone  ?? '')
@@ -19,10 +20,34 @@ export default function Profile() {
   async function save(e) {
     e.preventDefault()
     setError(''); setLoading(true)
-    const { error } = await supabase.auth.updateUser({ data: { nom: nom.trim(), telephone: telephone.trim() } })
-    setLoading(false)
-    if (error) setError('Erreur lors de la mise à jour.')
-    else { setSaved(true); setTimeout(() => setSaved(false), 2500) }
+    try {
+      const nomTrim = nom.trim()
+      const telTrim = telephone.trim()
+
+      // Timeout de sécurité 8s
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 8000)
+      )
+
+      // Mettre à jour auth metadata ET la table profiles en parallèle
+      await Promise.race([
+        Promise.all([
+          supabase.auth.updateUser({ data: { nom: nomTrim, telephone: telTrim } }),
+          supabase.from('profiles').update({ nom: nomTrim, telephone: telTrim }).eq('id', user.id),
+        ]),
+        timeout,
+      ])
+
+      await refreshProfile()
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (err) {
+      setError(err.message === 'timeout'
+        ? 'La connexion est lente. Réessayez.'
+        : 'Erreur lors de la mise à jour.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleSignOut() {

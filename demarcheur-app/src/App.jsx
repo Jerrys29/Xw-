@@ -53,9 +53,9 @@ function AppShell() {
     </Routes>
   )
 
-  // Compte en attente ou suspendu
-  if (profile && profile.statut !== 'actif') {
-    return <ComptePending statut={profile.statut} />
+  // Pas de profil (trigger pas encore exécuté) ou compte pas actif → pending
+  if (!profile || profile.statut !== 'actif') {
+    return <ComptePending statut={profile?.statut ?? 'en_attente'} />
   }
 
   const isAdmin = profile?.role === 'admin'
