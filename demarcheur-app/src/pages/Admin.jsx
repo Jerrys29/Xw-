@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import PageHeader from '../components/PageHeader'
-import { CheckCircle2, XCircle, Clock, Users, RefreshCw, Search } from 'lucide-react'
+import { CheckCircle2, XCircle, Clock, Users, RefreshCw, Search, Bell } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -62,6 +62,43 @@ export default function Admin() {
       />
 
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-24 md:pb-6 max-w-3xl mx-auto w-full space-y-4">
+
+        {/* Demandes d'activation en attente */}
+        {profiles.filter(p => p.demande_activation && p.statut !== 'actif').length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Bell size={16} className="text-blue-600" />
+              <p className="font-bold text-blue-800 text-sm">
+                {profiles.filter(p => p.demande_activation && p.statut !== 'actif').length} demande(s) d&apos;activation
+              </p>
+            </div>
+            <div className="space-y-2">
+              {profiles.filter(p => p.demande_activation && p.statut !== 'actif').map(p => {
+                const initiales = (p.nom ?? p.email ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                return (
+                  <div key={p.id} className="bg-white rounded-xl p-3 flex items-center gap-3 border border-blue-100">
+                    <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-xs">{initiales}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-900 text-sm truncate">{p.nom ?? p.email}</p>
+                      <p className="text-xs text-slate-400 truncate">{p.email}</p>
+                      {p.demande_at && (
+                        <p className="text-[11px] text-blue-500">
+                          Demande le {format(new Date(p.demande_at), 'd MMM à HH:mm', { locale: fr })}
+                        </p>
+                      )}
+                    </div>
+                    <button onClick={() => setStatut(p.id, 'actif')}
+                      className="flex items-center gap-1 py-2 px-3 bg-emerald-500 text-white rounded-xl font-bold text-xs flex-shrink-0">
+                      <CheckCircle2 size={13} /> Activer
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-2">

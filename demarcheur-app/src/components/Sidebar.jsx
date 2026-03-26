@@ -1,6 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { LayoutDashboard, Building2, Users, Home, Building, UserCircle, ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { supabase } from '../lib/supabase'
 
 const tabs = [
   { to: '/',              icon: LayoutDashboard, label: 'Tableau de bord' },
@@ -12,9 +14,37 @@ const tabs = [
 export default function Sidebar({ isAdmin }) {
   const user    = useAuthStore(s => s.user)
   const navigate = useNavigate()
+  const [pendingCount, setPendingCount] = useState(0)
 
   const nom      = user?.user_metadata?.nom ?? user?.email ?? 'Mon compte'
   const initiales = nom.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+
+  useEffect(() => {
+    if (!isAdmin) return
+    // Charge le nombre de demandes en attente
+    supabase.from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('demande_activation', true)
+      .neq('statut', 'actif')
+      .then(({ count }) => setPendingCount(count ?? 0))
+
+    // Écoute les nouvelles demandes en temps réel
+    const channel = supabase
+      .channel('admin-demandes')
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'profiles',
+        filter: 'demande_activation=eq.true',
+      }, () => {
+        supabase.from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('demande_activation', true)
+          .neq('statut', 'actif')
+          .then(({ count }) => setPendingCount(count ?? 0))
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [isAdmin])
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 min-h-screen sticky top-0">
@@ -59,7 +89,12 @@ export default function Sidebar({ isAdmin }) {
             {({ isActive }) => (
               <>
                 <ShieldCheck size={19} strokeWidth={isActive ? 2.5 : 1.8} />
-                Administration
+                <span className="flex-1">Administration</span>
+                {pendingCount > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                    {pendingCount}
+                  </span>
+                )}
               </>
             )}
           </NavLink>
