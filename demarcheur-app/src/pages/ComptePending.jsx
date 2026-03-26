@@ -24,10 +24,23 @@ export default function ComptePending({ statut }) {
   async function demanderActivation() {
     if (sent || sending) return
     setSending(true)
+
+    const nom = user?.user_metadata?.nom ?? user?.email ?? 'Un démarcheur'
+
     await supabase.from('profiles').update({
       demande_activation: true,
       demande_at: new Date().toISOString(),
     }).eq('id', user.id)
+
+    // Envoie une notification push à l'admin
+    supabase.functions.invoke('send-push', {
+      body: {
+        title: '🔔 Nouvelle demande d\'activation',
+        body:  `${nom} demande l'accès à l'application.`,
+        url:   '/admin',
+      }
+    }).catch(() => {}) // silencieux si pas encore déployée
+
     await refreshProfile()
     setSent(true)
     setSending(false)

@@ -8,11 +8,14 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'Démarcheur App',
-        short_name: 'Démarcheur',
+        name: 'Gestion immobilière',
+        short_name: 'Immobilier',
         description: 'Gestion immobilière pour démarcheurs',
         theme_color: '#1e40af',
         background_color: '#0f172a',
@@ -23,7 +26,7 @@ export default defineConfig({
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
         ],
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
       },
     }),

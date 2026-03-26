@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
+import { usePushNotifications } from './hooks/usePushNotifications'
 
 import Sidebar        from './components/Sidebar'
 import BottomNav      from './components/BottomNav'
@@ -32,6 +33,7 @@ function AppShell() {
   const user    = useAuthStore(s => s.user)
   const profile = useAuthStore(s => s.profile)
   const location = useLocation()
+  usePushNotifications() // abonne l'admin aux notifications push
   const isAuth  = AUTH_ROUTES.includes(location.pathname)
 
   // Non connecté → login
