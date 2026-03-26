@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { offlineInsert, offlineUpdate } from '../lib/offlineSave'
+import { cache } from '../lib/cache'
 import { useAuthStore } from '../store/authStore'
 import PageHeader from '../components/PageHeader'
+import { WifiOff } from 'lucide-react'
 
 export default function MaisonForm() {
   const { id } = useParams()
@@ -14,9 +17,15 @@ export default function MaisonForm() {
   const [proprios, setProprios] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [savedOffline, setSavedOffline] = useState(false)
 
   useEffect(() => {
-    supabase.from('proprietaires').select('id,nom').order('nom').then(({ data }) => setProprios(data ?? []))
+    // Propriétaires : depuis cache si offline
+    if (!navigator.onLine) {
+      setProprios(cache.get('proprietaires') ?? [])
+    } else {
+      supabase.from('proprietaires').select('id,nom').order('nom').then(({ data }) => setProprios(data ?? []))
+    }
     if (isEdit) supabase.from('maisons').select('*').eq('id', id).single().then(({ data }) => {
       if (data) setForm({ nom: data.nom, ville: data.ville, quartier: data.quartier, proprietaireId: data.proprietaire_id ?? '' })
     })
@@ -30,16 +39,29 @@ export default function MaisonForm() {
     if (!form.nom.trim() || !form.quartier.trim()) return
     setLoading(true)
     const payload = { nom: form.nom.trim(), ville: form.ville.trim(), quartier: form.quartier.trim(), proprietaire_id: form.proprietaireId || null, user_id: user.id }
+
     if (isEdit) {
-      const { error } = await supabase.from('maisons').update(payload).eq('id', id)
+      const { error, offline } = await offlineUpdate('maisons', id, payload, 'maisons')
       if (error) { setError('Erreur.'); setLoading(false); return }
+      if (offline) { setSavedOffline(true); setTimeout(() => navigate('/maisons'), 1500); return }
       navigate(`/maisons/${id}`)
     } else {
-      const { data, error } = await supabase.from('maisons').insert({ ...payload, latitude: null, longitude: null }).select().single()
+      const { data, error, offline } = await offlineInsert('maisons', { ...payload, latitude: null, longitude: null }, 'maisons')
       if (error) { setError('Erreur.'); setLoading(false); return }
+      if (offline) { setSavedOffline(true); setTimeout(() => navigate('/maisons'), 1500); return }
       navigate(`/maisons/${data.id}`)
     }
   }
+
+  if (savedOffline) return (
+    <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4">
+      <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
+        <WifiOff size={28} className="text-amber-500" />
+      </div>
+      <p className="font-bold text-slate-800 text-lg">Enregistré hors ligne</p>
+      <p className="text-slate-500 text-sm">Sera synchronisé automatiquement dès le retour de la connexion.</p>
+    </div>
+  )
 
   return (
     <div className="flex-1 flex flex-col">
@@ -57,7 +79,7 @@ export default function MaisonForm() {
           <Field label="Nom de la maison" value={form.nom} onChange={set('nom')} placeholder="Ex: Maison Fidjrossè" />
           <Field label="Quartier" value={form.quartier} onChange={set('quartier')} placeholder="Ex: Fidjrossè" />
           <Field label="Ville" value={form.ville} onChange={set('ville')} placeholder="Ex: Cotonou" />
-          <p className="text-xs text-slate-400 bg-blue-50 rounded-xl px-4 py-3">📍 La localisation GPS s'enregistre depuis la fiche de la maison, quand vous êtes sur place.</p>
+          <p className="text-xs text-slate-400 bg-blue-50 rounded-xl px-4 py-3">📍 La localisation GPS s&apos;enregistre depuis la fiche de la maison, quand vous êtes sur place.</p>
           <button type="submit" disabled={loading || !form.nom.trim() || !form.quartier.trim()}
             className="w-full py-5 bg-blue-600 disabled:bg-slate-200 disabled:text-slate-400 text-white text-lg font-bold rounded-2xl">
             {loading ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Ajouter la maison'}

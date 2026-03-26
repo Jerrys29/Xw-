@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { offlineInsert, offlineUpdate } from '../lib/offlineSave'
 import { useAuthStore } from '../store/authStore'
 import PageHeader from '../components/PageHeader'
+import { WifiOff } from 'lucide-react'
 
 const TYPES = ['Chambre', 'Studio', 'Appartement', 'Villa', 'Boutique']
 
@@ -13,6 +15,7 @@ export default function MenageForm() {
   const isEdit = Boolean(menageId)
   const [form, setForm] = useState({ numero: '', type: 'Chambre', statut: 'libre', loyer: '', compteurElec: '', compteurEau: '', notes: '' })
   const [loading, setLoading] = useState(false)
+  const [savedOffline, setSavedOffline] = useState(false)
 
   useEffect(() => {
     if (isEdit) supabase.from('menages').select('*').eq('id', menageId).single().then(({ data }) => {
@@ -38,13 +41,25 @@ export default function MenageForm() {
       notes: form.notes,
     }
     if (isEdit) {
-      await supabase.from('menages').update(payload).eq('id', menageId)
+      const { offline } = await offlineUpdate('menages', menageId, payload, `menages_${maisonId}`)
+      if (offline) { setSavedOffline(true); setTimeout(() => navigate(`/maisons/${maisonId}`), 1500); return }
       navigate(`/maisons/${maisonId}/menages/${menageId}`)
     } else {
-      const { data } = await supabase.from('menages').insert(payload).select().single()
+      const { data, offline } = await offlineInsert('menages', payload, `menages_${maisonId}`)
+      if (offline) { setSavedOffline(true); setTimeout(() => navigate(`/maisons/${maisonId}`), 1500); return }
       navigate(`/maisons/${maisonId}/menages/${data.id}`)
     }
   }
+
+  if (savedOffline) return (
+    <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4">
+      <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
+        <WifiOff size={28} className="text-amber-500" />
+      </div>
+      <p className="font-bold text-slate-800 text-lg">Enregistré hors ligne</p>
+      <p className="text-slate-500 text-sm">Sera synchronisé automatiquement dès le retour de la connexion.</p>
+    </div>
+  )
 
   return (
     <div className="flex-1 flex flex-col">

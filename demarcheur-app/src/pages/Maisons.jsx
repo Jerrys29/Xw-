@@ -1,29 +1,27 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useOfflineData } from '../hooks/useOfflineData'
 import PageHeader from '../components/PageHeader'
-import { Building2, Plus, MapPin, ChevronRight } from 'lucide-react'
+import { Building2, Plus, MapPin, ChevronRight, WifiOff } from 'lucide-react'
 
 export default function Maisons() {
   const navigate = useNavigate()
-  const [maisons, setMaisons] = useState([])
-  const [menages, setMenages] = useState([])
-  const [proprios, setProprios] = useState({})
   const [filtre, setFiltre] = useState('toutes')
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    Promise.all([
-      supabase.from('maisons').select('*').order('nom'),
-      supabase.from('menages').select('maison_id,statut'),
-      supabase.from('proprietaires').select('id,nom'),
-    ]).then(([{ data: m }, { data: men }, { data: p }]) => {
-      setMaisons(m ?? [])
-      setMenages(men ?? [])
-      setProprios(Object.fromEntries((p ?? []).map(x => [x.id, x.nom])))
-      setLoading(false)
-    })
-  }, [])
+  const { data: maisons, loading, offline } = useOfflineData(
+    'maisons',
+    async () => { const { data } = await supabase.from('maisons').select('*').order('nom'); return data ?? [] }
+  )
+  const { data: menages } = useOfflineData(
+    'menages_statut',
+    async () => { const { data } = await supabase.from('menages').select('maison_id,statut'); return data ?? [] }
+  )
+  const { data: propList } = useOfflineData(
+    'proprios_mini',
+    async () => { const { data } = await supabase.from('proprietaires').select('id,nom'); return data ?? [] }
+  )
+  const proprios = Object.fromEntries(propList.map(x => [x.id, x.nom]))
 
   const counts = (maisonId) => {
     const rows = menages.filter(m => m.maison_id === maisonId)
@@ -53,6 +51,11 @@ export default function Maisons() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-3 pb-24 md:pb-6 space-y-3 max-w-3xl mx-auto w-full">
+        {offline && maisons.length > 0 && (
+          <div className="flex items-center gap-2 text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs font-semibold">
+            <WifiOff size={13} /> Données en cache — hors ligne
+          </div>
+        )}
         {!loading && filtered.length === 0 && (
           <div className="text-center py-24">
             <Building2 size={36} className="mx-auto mb-3 text-slate-300" />

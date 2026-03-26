@@ -1,27 +1,45 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { Building2, Home, Users, Plus, RefreshCw } from 'lucide-react'
+import { cache } from '../lib/cache'
+import { Building2, Home, Users, RefreshCw, WifiOff } from 'lucide-react'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [stats, setStats] = useState({ libres: [], occupes: 0, maisons: 0, proprietaires: 0 })
+  const [stats, setStats] = useState(() => cache.get('dashboard_stats') ?? { libres: [], occupes: 0, maisons: 0, proprietaires: 0 })
   const [loading, setLoading] = useState(true)
+  const [offline, setOffline] = useState(false)
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
-    const [{ data: menages }, { count: maisons }, { count: proprios }] = await Promise.all([
-      supabase.from('menages').select('*'),
-      supabase.from('maisons').select('*', { count: 'exact', head: true }),
-      supabase.from('proprietaires').select('*', { count: 'exact', head: true }),
-    ])
-    const libres  = (menages ?? []).filter(m => m.statut === 'libre')
-    const occupes = (menages ?? []).filter(m => m.statut === 'occupé').length
-    setStats({ libres, occupes, maisons: maisons ?? 0, proprietaires: proprios ?? 0 })
+    if (!navigator.onLine) {
+      const cached = cache.get('dashboard_stats')
+      if (cached) setStats(cached)
+      setOffline(true)
+      setLoading(false)
+      return
+    }
+    try {
+      const [{ data: menages }, { data: maisons }, { data: proprios }] = await Promise.all([
+        supabase.from('menages').select('*'),
+        supabase.from('maisons').select('id'),
+        supabase.from('proprietaires').select('id'),
+      ])
+      const libres  = (menages ?? []).filter(m => m.statut === 'libre')
+      const occupes = (menages ?? []).filter(m => m.statut === 'occupé').length
+      const next = { libres, occupes, maisons: (maisons ?? []).length, proprietaires: (proprios ?? []).length }
+      cache.set('dashboard_stats', next)
+      setStats(next)
+      setOffline(false)
+    } catch {
+      const cached = cache.get('dashboard_stats')
+      if (cached) setStats(cached)
+      setOffline(true)
+    }
     setLoading(false)
-  }
+  }, [])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [load])
 
   return (
     <div className="flex-1 overflow-y-auto pb-24 md:pb-6">
@@ -33,7 +51,7 @@ export default function Dashboard() {
             <h1 className="text-white text-2xl font-bold mt-0.5">Tableau de bord</h1>
           </div>
           <button onClick={load} className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-white">
-            <RefreshCw size={17} className={loading ? 'animate-spin' : ''} />
+            {offline ? <WifiOff size={17} /> : <RefreshCw size={17} className={loading ? 'animate-spin' : ''} />}
           </button>
         </div>
       </div>
@@ -100,7 +118,13 @@ function BigBtn({ label, color, onClick, icon }) {
 function LibreCard({ menage, onClick }) {
   const [maison, setMaison] = useState(null)
   useEffect(() => {
-    if (menage.maison_id) supabase.from('maisons').select('nom,quartier').eq('id', menage.maison_id).single().then(({ data }) => setMaison(data))
+    if (!menage.maison_id) return
+    if (!navigator.onLine) {
+      const cached = cache.get('maisons') ?? []
+      setMaison(cached.find(m => m.id === menage.maison_id) ?? null)
+      return
+    }
+    supabase.from('maisons').select('nom,quartier').eq('id', menage.maison_id).single().then(({ data }) => setMaison(data))
   }, [menage.maison_id])
 
   return (

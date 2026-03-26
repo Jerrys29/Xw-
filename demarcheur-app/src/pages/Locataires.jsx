@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useOfflineData } from '../hooks/useOfflineData'
 import PageHeader from '../components/PageHeader'
-import { Users, Phone, Home, ChevronRight, Search } from 'lucide-react'
+import { Users, Phone, Home, ChevronRight, Search, WifiOff } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -10,14 +11,11 @@ const COLORS = ['bg-blue-500', 'bg-violet-500', 'bg-emerald-500', 'bg-orange-500
 
 export default function Locataires() {
   const navigate = useNavigate()
-  const [list, setList] = useState([])
   const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    supabase.from('locataires').select('*, menages(numero,type), maisons(nom,quartier)').order('nom')
-      .then(({ data }) => { setList(data ?? []); setLoading(false) })
-  }, [])
+  const { data: list, loading, offline } = useOfflineData(
+    'locataires',
+    async () => { const { data } = await supabase.from('locataires').select('*, menages(numero,type), maisons(nom,quartier)').order('nom'); return data ?? [] }
+  )
 
   const filtered = list.filter(l =>
     l.nom.toLowerCase().includes(search.toLowerCase()) || l.telephone?.includes(search)
@@ -35,6 +33,11 @@ export default function Locataires() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-24 md:pb-6 pt-2 space-y-2 max-w-3xl mx-auto w-full">
+        {offline && list.length > 0 && (
+          <div className="flex items-center gap-2 text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs font-semibold">
+            <WifiOff size={13} /> Données en cache — hors ligne
+          </div>
+        )}
         {!loading && filtered.length === 0 && (
           <div className="text-center py-24">
             <Users size={36} className="mx-auto mb-3 text-slate-300" />

@@ -1,20 +1,17 @@
-import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useOfflineData } from '../hooks/useOfflineData'
 import PageHeader from '../components/PageHeader'
-import { Users, Plus, Phone, ChevronRight } from 'lucide-react'
+import { Users, Plus, Phone, ChevronRight, WifiOff } from 'lucide-react'
 
 const COLORS = ['bg-blue-500', 'bg-violet-500', 'bg-orange-500', 'bg-emerald-500', 'bg-pink-500', 'bg-amber-500']
 
 export default function Proprietaires() {
   const navigate = useNavigate()
-  const [list, setList] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    supabase.from('proprietaires').select('*').order('nom')
-      .then(({ data }) => { setList(data ?? []); setLoading(false) })
-  }, [])
+  const { data: list, loading, offline } = useOfflineData(
+    'proprietaires',
+    async () => { const { data } = await supabase.from('proprietaires').select('*').order('nom'); return data ?? [] }
+  )
 
   return (
     <div className="flex-1 flex flex-col">
@@ -26,6 +23,11 @@ export default function Proprietaires() {
       } />
 
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-24 md:pb-6 space-y-3 max-w-3xl mx-auto w-full">
+        {offline && list.length > 0 && (
+          <div className="flex items-center gap-2 text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs font-semibold">
+            <WifiOff size={13} /> Données en cache — hors ligne
+          </div>
+        )}
         {!loading && list.length === 0 && (
           <div className="text-center py-24">
             <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
