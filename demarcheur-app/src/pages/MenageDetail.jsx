@@ -16,6 +16,7 @@ export default function MenageDetail() {
   const [historique, setHistorique] = useState([])
   const [confirm,   setConfirm]   = useState(false)
   const [liberConfirm, setLiberConfirm] = useState(false)
+  const [dateSortie, setDateSortie] = useState(new Date().toISOString().split('T')[0])
 
   async function load() {
     const [{ data: m }, { data: loc }, { data: mais }, { data: hist }] = await Promise.all([
@@ -42,7 +43,7 @@ export default function MenageDetail() {
         nom:         locataire.nom,
         telephone:   locataire.telephone,
         date_entree: locataire.date_entree,
-        date_sortie: new Date().toISOString().split('T')[0],
+        date_sortie: dateSortie,
       })
       await supabase.from('locataires').delete().eq('id', locataire.id)
     }
@@ -95,11 +96,20 @@ export default function MenageDetail() {
       {liberConfirm && (
         <Modal onClose={() => setLiberConfirm(false)}>
           <p className="text-xl font-bold mb-2">Libérer ce logement ?</p>
-          <p className="text-slate-500 mb-6 text-sm">
+          <p className="text-slate-500 mb-4 text-sm">
             {locataire?.nom && locataire.nom !== 'Locataire inconnu'
-              ? `${locataire.nom} sera ajouté à l'historique avec la date de sortie d'aujourd'hui.`
-              : "Le locataire sera ajouté à l'historique avec la date de sortie d'aujourd'hui."}
+              ? `${locataire.nom} sera ajouté à l'historique des occupants.`
+              : "Le locataire sera ajouté à l'historique des occupants."}
           </p>
+          <div className="mb-5">
+            <label className="block text-sm font-bold text-slate-600 mb-2">Date de sortie</label>
+            <input
+              type="date"
+              value={dateSortie}
+              onChange={e => setDateSortie(e.target.value)}
+              className="w-full bg-slate-50 border-2 border-slate-200 focus:border-blue-500 rounded-2xl px-4 py-3 text-base outline-none"
+            />
+          </div>
           <div className="flex gap-3">
             <button onClick={() => setLiberConfirm(false)} className="flex-1 py-4 rounded-2xl bg-slate-100 font-bold">Annuler</button>
             <button onClick={liberer} className="flex-1 py-4 rounded-2xl bg-blue-600 font-bold text-white">Confirmer</button>

@@ -5,6 +5,7 @@ import { offlineInsert, offlineUpdate } from '../lib/offlineSave'
 import { cache } from '../lib/cache'
 import { useAuthStore } from '../store/authStore'
 import PageHeader from '../components/PageHeader'
+import SearchSelect from '../components/SearchSelect'
 import { WifiOff } from 'lucide-react'
 
 export default function MaisonForm() {
@@ -69,13 +70,13 @@ export default function MaisonForm() {
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full">
         {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">{error}</div>}
         <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-bold text-slate-600 mb-2">Propriétaire</label>
-            <select value={form.proprietaireId} onChange={set('proprietaireId')} className="w-full bg-white border-2 border-slate-200 focus:border-blue-500 rounded-2xl px-4 py-4 text-base outline-none">
-              <option value="">— Choisir un propriétaire —</option>
-              {proprios.map(p => <option key={p.id} value={p.id}>{p.nom}</option>)}
-            </select>
-          </div>
+          <SearchSelect
+            label="Propriétaire"
+            value={form.proprietaireId}
+            onChange={val => setForm(f => ({ ...f, proprietaireId: val }))}
+            options={proprios.map(p => ({ value: p.id, label: p.nom }))}
+            placeholder="— Choisir un propriétaire —"
+          />
           <Field label="Nom de la maison" value={form.nom} onChange={set('nom')} placeholder="Ex: Maison Fidjrossè" />
           <Field label="Quartier" value={form.quartier} onChange={set('quartier')} placeholder="Ex: Fidjrossè" />
           <Field label="Ville" value={form.ville} onChange={set('ville')} placeholder="Ex: Cotonou" />

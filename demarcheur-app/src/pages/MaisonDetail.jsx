@@ -5,7 +5,7 @@ import PageHeader from '../components/PageHeader'
 import StatusBadge from '../components/StatusBadge'
 import MapPicker from '../components/MapPicker'
 import MapPreview from '../components/MapPreview'
-import { Plus, MapPin, Share2, Pencil, Trash2, Home, User, Gauge, ChevronRight, Navigation, Edit3 } from 'lucide-react'
+import { Plus, MapPin, Share2, Pencil, Trash2, Home, User, Gauge, ChevronRight, Navigation, Edit3, Phone } from 'lucide-react'
 
 export default function MaisonDetail() {
   const { id } = useParams()
@@ -205,25 +205,38 @@ function MenageRow({ menage, onClick }) {
   const [locataire, setLocataire] = useState(null)
   useEffect(() => {
     if (menage.statut === 'occupé') {
-      supabase.from('locataires').select('nom').eq('menage_id', menage.id).maybeSingle()
+      supabase.from('locataires').select('nom, telephone').eq('menage_id', menage.id).maybeSingle()
         .then(({ data }) => setLocataire(data))
     }
   }, [menage])
 
+  const isLibre = menage.statut === 'libre'
+  const loyer = menage.loyer ? `${Number(menage.loyer).toLocaleString('fr-FR')} F/mois` : 'Prix N/A'
+
   return (
     <button onClick={onClick}
-      className="w-full text-left bg-white rounded-2xl px-4 py-4 shadow-sm border border-slate-100 active:bg-slate-50 flex items-center gap-3">
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${menage.statut === 'libre' ? 'bg-blue-50' : 'bg-emerald-50'}`}>
-        <Home size={20} className={menage.statut === 'libre' ? 'text-blue-400' : 'text-emerald-500'} />
+      className="w-full text-left bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-slate-100 active:bg-slate-50 flex items-center gap-3">
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${isLibre ? 'bg-blue-50' : 'bg-emerald-50'}`}>
+        <Home size={20} className={isLibre ? 'text-blue-400' : 'text-emerald-500'} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-0.5">
           <p className="font-bold text-slate-900 text-sm">{menage.numero}</p>
           <StatusBadge status={menage.statut} />
         </div>
-        <p className="text-xs text-slate-400 mt-0.5">
-          {locataire ? locataire.nom : `${menage.type} · ${menage.loyer ? Number(menage.loyer).toLocaleString('fr-FR') + ' F/mois' : 'Prix N/A'}`}
+        <p className="text-xs text-slate-400">
+          {menage.type} · {loyer}
         </p>
+        {!isLibre && locataire && (
+          <p className="text-xs text-emerald-600 font-semibold mt-0.5 flex items-center gap-1">
+            <User size={11} />
+            {locataire.nom && locataire.nom !== 'Locataire inconnu' ? locataire.nom : 'Locataire'}
+            {locataire.telephone ? ` · ${locataire.telephone}` : ''}
+          </p>
+        )}
+        {isLibre && (
+          <p className="text-xs text-blue-500 font-semibold mt-0.5">Disponible</p>
+        )}
       </div>
       <div className="flex items-center gap-1">
         {(menage.compteur_elec || menage.compteur_eau) && <Gauge size={15} className="text-slate-300" />}
