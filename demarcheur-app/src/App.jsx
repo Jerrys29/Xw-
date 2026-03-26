@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { usePushNotifications } from './hooks/usePushNotifications'
@@ -32,16 +32,25 @@ import Admin              from './pages/Admin'
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password', '/cgu', '/auth/callback']
 
 function AppShell() {
-  const user    = useAuthStore(s => s.user)
-  const profile = useAuthStore(s => s.profile)
-  const location = useLocation()
-  usePushNotifications() // abonne l'admin aux notifications push
-  const isAuth  = AUTH_ROUTES.includes(location.pathname)
+  const user           = useAuthStore(s => s.user)
+  const profile        = useAuthStore(s => s.profile)
+  const refreshProfile = useAuthStore(s => s.refreshProfile)
+  const location       = useLocation()
+  usePushNotifications()
+  const isAuth = AUTH_ROUTES.includes(location.pathname)
+
+  // Retry auto si user connecté mais profil pas encore chargé
+  useEffect(() => {
+    if (user && !profile) {
+      const t = setTimeout(() => refreshProfile(), 2000)
+      return () => clearTimeout(t)
+    }
+  }, [user, profile])
 
   // Non connecté → login
   if (!user && !isAuth) return <Navigate to="/login" replace />
 
-  // Pages publiques (auth + CGU)
+  // Pages publiques
   if (isAuth) return (
     <Routes>
       <Route path="/login"           element={<Login />} />
@@ -53,9 +62,19 @@ function AppShell() {
     </Routes>
   )
 
-  // Pas de profil (trigger pas encore exécuté) ou compte pas actif → pending
-  if (!profile || profile.statut !== 'actif') {
-    return <ComptePending statut={profile?.statut ?? 'en_attente'} />
+  // Profil pas encore chargé → spinner (pas ComptePending)
+  if (user && !profile) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="text-center">
+        <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-slate-500 text-sm">Chargement du profil…</p>
+      </div>
+    </div>
+  )
+
+  // Compte en attente ou suspendu
+  if (profile.statut !== 'actif') {
+    return <ComptePending statut={profile.statut} />
   }
 
   const isAdmin = profile?.role === 'admin'
