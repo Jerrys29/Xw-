@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 import { Clock, LogOut, Bell, CheckCircle2, XCircle } from 'lucide-react'
 
 export default function ComptePending({ statut }) {
@@ -13,6 +14,9 @@ export default function ComptePending({ statut }) {
 
   const [sending,  setSending]  = useState(false)
   const [sent,     setSent]     = useState(profile?.demande_activation ?? false)
+
+  // S'abonne aux push pour recevoir la notif d'activation
+  usePushNotifications()
 
   const isSuspended = statut === 'suspendu'
 

@@ -41,6 +41,30 @@ export default function Admin() {
       const old = profiles.find(x => x.id === id)?.statut
       return { ...c, [old]: c[old] - 1, [statut]: c[statut] + 1 }
     })
+
+    // Notifie le démarcheur si son compte vient d'être activé
+    if (statut === 'actif') {
+      supabase.functions.invoke('send-push', {
+        body: {
+          user_id: id,
+          title: '✅ Compte activé !',
+          body:  'Votre compte est maintenant actif. Vous pouvez utiliser l\'application.',
+          url:   '/',
+        }
+      }).catch(() => {})
+    }
+
+    // Notifie si compte suspendu
+    if (statut === 'suspendu') {
+      supabase.functions.invoke('send-push', {
+        body: {
+          user_id: id,
+          title: '⛔ Compte suspendu',
+          body:  'Votre accès à l\'application a été suspendu. Contactez l\'administrateur.',
+          url:   '/',
+        }
+      }).catch(() => {})
+    }
   }
 
   const filtered = profiles.filter(p => {

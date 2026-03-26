@@ -16,8 +16,8 @@ export function usePushNotifications() {
   const profile = useAuthStore(s => s.profile)
 
   useEffect(() => {
-    // Seulement pour les admins, seulement si le navigateur supporte les push
-    if (!user || profile?.role !== 'admin') return
+    // Tous les utilisateurs connectés (admin ET démarcheurs)
+    if (!user) return
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
     if (!VAPID_PUBLIC_KEY) return
 

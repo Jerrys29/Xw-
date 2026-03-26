@@ -12,7 +12,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { title, body, url } = await req.json()
+    const { title, body, url, user_id } = await req.json()
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -25,10 +25,14 @@ serve(async (req) => {
       Deno.env.get('VAPID_PRIVATE_KEY')!
     )
 
-    // Récupère tous les abonnements push (admins)
-    const { data: subs, error } = await supabase
-      .from('push_subscriptions')
-      .select('subscription')
+    // Si user_id fourni → push vers cet utilisateur précis
+    // Sinon → push vers tous les admins
+    let query = supabase.from('push_subscriptions').select('subscription')
+    if (user_id) {
+      query = query.eq('user_id', user_id)
+    }
+
+    const { data: subs, error } = await query
 
     if (error || !subs?.length) {
       return new Response(JSON.stringify({ sent: 0 }), {
