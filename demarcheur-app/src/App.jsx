@@ -11,6 +11,7 @@ import Login          from './pages/auth/Login'
 import Register       from './pages/auth/Register'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import AuthCallback   from './pages/auth/AuthCallback'
+import ResetPassword  from './pages/auth/ResetPassword'
 import ComptePending  from './pages/ComptePending'
 import CGU            from './pages/CGU'
 
@@ -28,7 +29,7 @@ import Locataires         from './pages/Locataires'
 import Profile            from './pages/Profile'
 import Admin              from './pages/Admin'
 
-const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/cgu', '/auth/callback']
+const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password', '/cgu', '/auth/callback']
 
 function AppShell() {
   const user    = useAuthStore(s => s.user)
@@ -48,6 +49,7 @@ function AppShell() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/cgu"             element={<CGU />} />
       <Route path="/auth/callback"   element={<AuthCallback />} />
+      <Route path="/reset-password"  element={<ResetPassword />} />
     </Routes>
   )
 
