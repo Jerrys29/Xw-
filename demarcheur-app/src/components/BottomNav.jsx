@@ -1,0 +1,55 @@
+import { NavLink } from 'react-router-dom'
+import { LayoutDashboard, Building2, Users, Home, UserCircle, ShieldCheck } from 'lucide-react'
+
+const tabs = [
+  { to: '/',              icon: LayoutDashboard, label: 'Accueil' },
+  { to: '/proprietaires', icon: Users,           label: 'Proprio' },
+  { to: '/maisons',       icon: Building2,       label: 'Maisons' },
+  { to: '/locataires',    icon: Home,            label: 'Locataires' },
+  { to: '/profil',        icon: UserCircle,      label: 'Profil' },
+]
+
+export default function BottomNav({ isAdmin }) {
+  return (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-lg">
+      <div className="flex max-w-lg mx-auto">
+        {tabs.map(({ to, icon: Icon, label }) => (
+          <NavLink key={to} to={to} end={to === '/'}
+            className={({ isActive }) =>
+              `flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors ${
+                isActive ? 'text-blue-600' : 'text-slate-400'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <div className={`p-1.5 rounded-xl ${isActive ? 'bg-blue-50' : ''}`}>
+                  <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+                </div>
+                <span className="text-[10px] font-semibold leading-none">{label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
+        {isAdmin && (
+          <NavLink to="/admin"
+            className={({ isActive }) =>
+              `flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors ${
+                isActive ? 'text-blue-600' : 'text-slate-400'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <div className={`p-1.5 rounded-xl ${isActive ? 'bg-blue-50' : ''}`}>
+                  <ShieldCheck size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+                </div>
+                <span className="text-[10px] font-semibold leading-none">Admin</span>
+              </>
+            )}
+          </NavLink>
+        )}
+      </div>
+    </nav>
+  )
+}
