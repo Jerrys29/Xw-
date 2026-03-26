@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useOfflineData } from '../hooks/useOfflineData'
 import PageHeader from '../components/PageHeader'
-import { Users, Plus, Phone, ChevronRight, WifiOff } from 'lucide-react'
+import { Users, Plus, Phone, ChevronRight, WifiOff, Building2 } from 'lucide-react'
 
 const COLORS = ['bg-blue-500', 'bg-violet-500', 'bg-orange-500', 'bg-emerald-500', 'bg-pink-500', 'bg-amber-500']
 
@@ -10,7 +10,13 @@ export default function Proprietaires() {
   const navigate = useNavigate()
   const { data: list, loading, offline } = useOfflineData(
     'proprietaires',
-    async () => { const { data } = await supabase.from('proprietaires').select('*').order('nom'); return data ?? [] }
+    async () => {
+      const { data } = await supabase
+        .from('proprietaires')
+        .select('*, maisons(count)')
+        .order('nom')
+      return data ?? []
+    }
   )
 
   return (
@@ -38,17 +44,34 @@ export default function Proprietaires() {
           </div>
         )}
         {list.map((p, i) => {
-          const initials = p.nom.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+          const initials    = p.nom.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+          const nbMaisons   = p.maisons?.[0]?.count ?? 0
           return (
             <button key={p.id} onClick={() => navigate(`/proprietaires/${p.id}`)}
               className="w-full text-left bg-white rounded-2xl px-4 py-4 flex items-center gap-4 shadow-sm border border-slate-100 active:bg-slate-50">
+
+              {/* Avatar */}
               <div className={`w-12 h-12 rounded-xl ${COLORS[i % COLORS.length]} flex items-center justify-center flex-shrink-0`}>
                 <span className="text-white font-bold text-base">{initials}</span>
               </div>
+
+              {/* Infos */}
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-slate-900 text-base truncate">{p.nom}</p>
-                <p className="text-sm text-slate-400 flex items-center gap-1 mt-0.5"><Phone size={12} /> {p.telephone}</p>
+                <p className="text-sm text-slate-400 flex items-center gap-1 mt-0.5">
+                  <Phone size={12} /> {p.telephone}
+                </p>
+                {/* Badge maisons */}
+                <div className="flex items-center gap-1 mt-1.5">
+                  <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    nbMaisons > 0 ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'
+                  }`}>
+                    <Building2 size={11} />
+                    {nbMaisons === 0 ? 'Aucune maison' : `${nbMaisons} maison${nbMaisons > 1 ? 's' : ''}`}
+                  </span>
+                </div>
               </div>
+
               <ChevronRight size={20} className="text-slate-300 flex-shrink-0" />
             </button>
           )
