@@ -13,9 +13,10 @@ export default function Profile() {
 
   const [nom, setNom]         = useState(user?.user_metadata?.nom       ?? '')
   const [telephone, setTel]   = useState(user?.user_metadata?.telephone  ?? '')
-  const [loading, setLoading] = useState(false)
-  const [saved, setSaved]     = useState(false)
-  const [error, setError]     = useState('')
+  const [loading,        setLoading]        = useState(false)
+  const [loadingSignOut, setLoadingSignOut] = useState(false)
+  const [saved,          setSaved]          = useState(false)
+  const [error,          setError]          = useState('')
 
   async function save(e) {
     e.preventDefault()
@@ -51,8 +52,15 @@ export default function Profile() {
   }
 
   async function handleSignOut() {
-    await signOut()
-    navigate('/login')
+    setLoadingSignOut(true)
+    try {
+      await signOut()
+    } catch (_) {
+      // ignorer les erreurs
+    } finally {
+      // Forcer un rechargement complet pour vider tous les états
+      window.location.href = '/login'
+    }
   }
 
   const initiales = nom ? nom.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?'
@@ -118,9 +126,12 @@ export default function Profile() {
 
         {/* Déconnexion */}
         <div className="pt-2">
-          <button onClick={handleSignOut}
-            className="w-full flex items-center justify-center gap-2 py-4 bg-red-50 text-red-600 text-base font-bold rounded-2xl border border-red-100">
-            <LogOut size={18} /> Se déconnecter
+          <button onClick={handleSignOut} disabled={loadingSignOut}
+            className="w-full flex items-center justify-center gap-2 py-4 bg-red-50 disabled:opacity-60 text-red-600 text-base font-bold rounded-2xl border border-red-100">
+            {loadingSignOut
+              ? <><div className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" /> Déconnexion…</>
+              : <><LogOut size={18} /> Se déconnecter</>
+            }
           </button>
         </div>
       </div>
