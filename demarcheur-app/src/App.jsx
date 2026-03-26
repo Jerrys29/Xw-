@@ -64,10 +64,10 @@ function AppShell() {
 
   // Profil pas encore chargé → spinner (pas ComptePending)
   if (user && !profile) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="text-center">
-        <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-slate-500 text-sm">Chargement du profil…</p>
+    <div className="min-h-screen flex items-center justify-center" style={{background:'linear-gradient(135deg,#0a1628 0%,#0d2347 50%,#0a1628 100%)'}}>
+      <div className="text-center text-white">
+        <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-sm font-medium opacity-80">Chargement du profil…</p>
       </div>
     </div>
   )
@@ -117,7 +117,7 @@ export default function App() {
   useEffect(() => { init() }, [])
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-blue-600">
+    <div className="min-h-screen flex items-center justify-center" style={{background:'linear-gradient(135deg,#0a1628 0%,#0d2347 50%,#0a1628 100%)'}}>
       <div className="text-center text-white">
         <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
         <p className="font-semibold">Chargement…</p>

@@ -51,7 +51,7 @@ export default function ComptePending({ statut }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{background:'linear-gradient(135deg,#0a1628 0%,#0d2347 50%,#0a1628 100%)'}}>
       <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full text-center">
 
         {/* Icône */}
