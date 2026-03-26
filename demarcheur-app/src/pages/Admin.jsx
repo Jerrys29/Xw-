@@ -36,13 +36,13 @@ export default function Admin() {
   useEffect(() => { load() }, [])
 
   async function setStatut(id, statut) {
-    // Utilise la fonction SECURITY DEFINER pour modifier un autre profil
-    await supabase.rpc('admin_set_statut', { target_id: id, new_statut: statut })
-    setProfiles(p => p.map(x => x.id === id ? { ...x, statut } : x))
-    setCounts(c => {
-      const old = profiles.find(x => x.id === id)?.statut
-      return { ...c, [old]: c[old] - 1, [statut]: c[statut] + 1 }
-    })
+    const { error } = await supabase.rpc('admin_set_statut', { target_id: id, new_statut: statut })
+    if (error) {
+      alert('Erreur : ' + error.message + '\n\nVérifiez que la fonction admin_set_statut existe dans Supabase.')
+      return
+    }
+    // Recharge depuis la base pour confirmer le vrai état
+    await load()
 
     // Notifie le démarcheur si son compte vient d'être activé
     if (statut === 'actif') {
