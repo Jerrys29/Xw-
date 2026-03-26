@@ -35,28 +35,37 @@ export default function Register() {
   }
 
   if (success) return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{background:'linear-gradient(135deg,#0a1628 0%,#0d2347 50%,#0a1628 100%)'}}>
       <div className="bg-white rounded-3xl p-8 shadow-2xl text-center max-w-sm w-full">
-        <div className="text-5xl mb-4">✅</div>
-        <h2 className="text-xl font-bold text-slate-900 mb-2">Inscription envoyée !</h2>
-        <p className="text-slate-500 text-sm mb-2">
-          Votre compte est en attente d&apos;activation par notre équipe.
+        <div className="text-5xl mb-4">📧</div>
+        <h2 className="text-xl font-bold text-slate-900 mb-2">Vérifiez votre email !</h2>
+        <p className="text-slate-600 text-sm mb-3">
+          Un lien de confirmation a été envoyé à <strong>{form.email}</strong>.
         </p>
-        <p className="text-slate-400 text-xs mb-6">
-          Vous recevrez une confirmation dès que votre accès est validé. Comptez généralement moins de 24h.
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-5 text-left">
+          <p className="text-blue-800 text-xs font-bold mb-1">Étapes :</p>
+          <ol className="text-blue-700 text-xs space-y-1 list-decimal list-inside">
+            <li>Ouvrez votre boîte email</li>
+            <li>Cliquez sur le lien de confirmation</li>
+            <li>Revenez ici et connectez-vous</li>
+            <li>Demandez l&apos;activation de votre compte</li>
+          </ol>
+        </div>
+        <p className="text-slate-400 text-xs mb-5">
+          Votre accès sera activé sous 24h après confirmation de l&apos;administrateur.
         </p>
         <Link to="/login" className="block w-full py-4 bg-blue-600 text-white font-bold rounded-xl text-center">
-          Retour à la connexion
+          Aller à la connexion
         </Link>
       </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{background:'linear-gradient(135deg,#0a1628 0%,#0d2347 50%,#0a1628 100%)'}}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-5">
-          <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center mx-auto mb-3">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{background:'rgba(255,255,255,0.15)'}}>
             <Building2 size={28} className="text-white" />
           </div>
           <h1 className="text-xl font-bold text-white leading-tight">Gestion immobilière</h1>
@@ -101,9 +110,10 @@ export default function Register() {
                 <Link to="/cgu" target="_blank" className="text-blue-600 font-semibold underline">
                   conditions générales d&apos;utilisation
                 </Link>
-                {' '}(incluant l&apos;utilisation des données agrégées pour l&apos;écosystème Xwé — art. 4)
-                et la{' '}
-                <span className="text-blue-600 font-semibold">politique de confidentialité</span>.
+                {' '}et la{' '}
+                <Link to="/cgu" target="_blank" className="text-blue-600 font-semibold underline">
+                  politique de confidentialité
+                </Link>.
               </span>
             </label>
 
