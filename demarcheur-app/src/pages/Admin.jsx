@@ -20,7 +20,8 @@ export default function Admin() {
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false })
+    // Utilise la fonction SECURITY DEFINER qui bypass RLS pour l'admin
+    const { data } = await supabase.rpc('get_all_profiles_for_admin')
     const rows = data ?? []
     setProfiles(rows)
     setCounts({
@@ -35,7 +36,8 @@ export default function Admin() {
   useEffect(() => { load() }, [])
 
   async function setStatut(id, statut) {
-    await supabase.from('profiles').update({ statut }).eq('id', id)
+    // Utilise la fonction SECURITY DEFINER pour modifier un autre profil
+    await supabase.rpc('admin_set_statut', { target_id: id, new_statut: statut })
     setProfiles(p => p.map(x => x.id === id ? { ...x, statut } : x))
     setCounts(c => {
       const old = profiles.find(x => x.id === id)?.statut
