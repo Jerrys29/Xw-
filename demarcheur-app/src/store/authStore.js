@@ -48,6 +48,17 @@ export const useAuthStore = create((set, get) => ({
     return { data, error }
   },
 
+  signInLocataire: async ({ phone, password }) => {
+    const phoneClean = phone.replace(/[^0-9]/g, '')
+    const email = `loc.${phoneClean}@demarcheur.app`
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (!error && data.user) {
+      const profile = await fetchProfile(data.user.id)
+      set({ profile })
+    }
+    return { data, error }
+  },
+
   resetPassword: async (email) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,

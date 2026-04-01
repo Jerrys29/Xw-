@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:docs.kkiapay.me)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.fedapay.com)"
+    ]
+  }
+}

@@ -1,18 +1,22 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import PageHeader from '../components/PageHeader'
-import { User, Phone, Mail, LogOut, Save, CheckCircle2 } from 'lucide-react'
+import { User, Phone, Mail, LogOut, Save, CheckCircle2, CreditCard, Key } from 'lucide-react'
 
 export default function Profile() {
-  const navigate  = useNavigate()
   const user           = useAuthStore(s => s.user)
+  const profile        = useAuthStore(s => s.profile)
   const refreshProfile = useAuthStore(s => s.refreshProfile)
   const signOut        = useAuthStore(s => s.signOut)
 
-  const [nom, setNom]         = useState(user?.user_metadata?.nom       ?? '')
-  const [telephone, setTel]   = useState(user?.user_metadata?.telephone  ?? '')
+  const isAgence = profile?.role === 'agence' || profile?.role === 'admin'
+
+  const [nom,       setNom]       = useState(user?.user_metadata?.nom       ?? '')
+  const [telephone, setTel]       = useState(user?.user_metadata?.telephone  ?? '')
+  const [fedapayKey, setFedapayKey] = useState(profile?.fedapay_public_key  ?? '')
+  const [commission, setCommission] = useState(profile?.commission_taux     ?? 10)
+
   const [loading,        setLoading]        = useState(false)
   const [loadingSignOut, setLoadingSignOut] = useState(false)
   const [saved,          setSaved]          = useState(false)
@@ -25,16 +29,23 @@ export default function Profile() {
       const nomTrim = nom.trim()
       const telTrim = telephone.trim()
 
-      // Timeout de sécurité 8s
       const timeout = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('timeout')), 8000)
       )
 
-      // Mettre à jour auth metadata ET la table profiles en parallèle
+      const profileUpdate = {
+        nom:       nomTrim,
+        telephone: telTrim,
+        ...(isAgence && {
+          fedapay_public_key: fedapayKey.trim(),
+          commission_taux:    Number(commission),
+        }),
+      }
+
       await Promise.race([
         Promise.all([
           supabase.auth.updateUser({ data: { nom: nomTrim, telephone: telTrim } }),
-          supabase.from('profiles').update({ nom: nomTrim, telephone: telTrim }).eq('id', user.id),
+          supabase.from('profiles').update(profileUpdate).eq('id', user.id),
         ]),
         timeout,
       ])
@@ -53,22 +64,18 @@ export default function Profile() {
 
   async function handleSignOut() {
     setLoadingSignOut(true)
-    try {
-      await signOut()
-    } catch (_) {
-      // ignorer les erreurs
-    } finally {
-      // Forcer un rechargement complet pour vider tous les états
-      window.location.href = '/login'
-    }
+    try { await signOut() } catch (_) {}
+    window.location.href = '/login'
   }
 
-  const initiales = nom ? nom.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?'
+  const initiales = nom
+    ? nom.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    : '?'
 
   return (
     <div className="flex-1 flex flex-col">
       <PageHeader title="Mon profil" back />
-      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full space-y-5">
+      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full space-y-5 pb-28">
 
         {/* Avatar */}
         <div className="flex flex-col items-center pb-2">
@@ -77,17 +84,23 @@ export default function Profile() {
           </div>
           <p className="text-base font-bold text-slate-900">{nom || 'Mon compte'}</p>
           <p className="text-sm text-slate-400">{user?.email}</p>
+          {profile?.role && (
+            <span className="mt-1 text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 capitalize">
+              {profile.role}
+            </span>
+          )}
         </div>
 
-        {error  && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>}
-        {saved  && (
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>}
+        {saved && (
           <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-3 flex items-center gap-2">
             <CheckCircle2 size={16} /> Profil mis à jour !
           </div>
         )}
 
         <form onSubmit={save} className="space-y-4">
-          {/* Nom */}
+
+          {/* ── Infos personnelles ── */}
           <div>
             <label className="block text-sm font-bold text-slate-600 mb-2">Nom complet</label>
             <div className="relative">
@@ -97,17 +110,16 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Téléphone */}
           <div>
             <label className="block text-sm font-bold text-slate-600 mb-2">Téléphone</label>
             <div className="relative">
               <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input type="tel" value={telephone} onChange={e => setTel(e.target.value)} placeholder="+229 97 00 00 00"
+              <input type="tel" value={telephone} onChange={e => setTel(e.target.value)}
+                placeholder="+229 97 00 00 00"
                 className="w-full bg-white border-2 border-slate-200 focus:border-blue-500 rounded-2xl pl-11 pr-4 py-4 text-base outline-none" />
             </div>
           </div>
 
-          {/* Email (lecture seule) */}
           <div>
             <label className="block text-sm font-bold text-slate-600 mb-2">Email</label>
             <div className="relative">
@@ -118,9 +130,54 @@ export default function Profile() {
             <p className="text-xs text-slate-400 mt-1 ml-1">L&apos;email ne peut pas être modifié</p>
           </div>
 
+          {/* ── Config paiement (agence uniquement) ── */}
+          {isAgence && (
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-4">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <CreditCard size={13} /> Configuration paiement FedaPay
+              </p>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-600 mb-2">
+                  Clé publique FedaPay
+                </label>
+                <div className="relative">
+                  <Key size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={fedapayKey}
+                    onChange={e => setFedapayKey(e.target.value)}
+                    placeholder="pk_sandbox_xxxxxxxxxxxx"
+                    className="w-full bg-white border-2 border-slate-200 focus:border-blue-500 rounded-2xl pl-11 pr-4 py-4 text-base outline-none font-mono text-sm"
+                  />
+                </div>
+                <p className="text-xs text-slate-400 mt-1 ml-1">
+                  Trouvez votre clé sur{' '}
+                  <a href="https://app.fedapay.com" target="_blank" rel="noreferrer"
+                    className="text-blue-500 underline">app.fedapay.com</a>
+                  {' '}→ API
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-600 mb-2">
+                  Taux de commission (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={commission}
+                  onChange={e => setCommission(e.target.value)}
+                  className="w-full bg-white border-2 border-slate-200 focus:border-blue-500 rounded-2xl px-4 py-4 text-base outline-none"
+                />
+              </div>
+            </div>
+          )}
+
           <button type="submit" disabled={loading}
             className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 disabled:bg-slate-200 disabled:text-slate-400 text-white text-base font-bold rounded-2xl">
-            <Save size={18} /> {loading ? 'Enregistrement…' : 'Enregistrer les modifications'}
+            <Save size={18} />
+            {loading ? 'Enregistrement…' : 'Enregistrer les modifications'}
           </button>
         </form>
 

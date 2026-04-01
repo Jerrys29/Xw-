@@ -1,0 +1,44 @@
+Mise à part l'info sur les conmpteur que l'agenre entre on ne gere plus rien d'autre pas de facture soneb ou sbee ou un truc de reparation non pour ça 
+
+Plan d'architecture — Nouvelles fonctionnalités
+Nouveaux rôles
+Rôle actuel	Nouveau rôle	Description
+user	→ agence	L'agence immobilière (rôle principal)
+admin	inchangé	Administration système
+(n'existe pas)	locataire	Le locataire, compte créé par l'agence
+Ce que l'agence peut faire
+Gérer propriétaires, maisons, ménages (comme maintenant)
+Assigner un locataire à un ménage + définir son loyer
+Créer un compte locataire : téléphone = identifiant, mot de passe généré automatiquement
+Configurer son numéro Momo dans son profil
+Voir pour chaque locataire : mois payés / mois non payés
+Dashboard commission 10% : par maison, par mois, total
+Ce que le locataire voit
+Connexion avec son téléphone + mot de passe reçu
+Ses mois payés et non payés
+Bouton Payer mon loyer → paiement Mobile Money
+Ses reçus/factures après paiement
+Paiement Mobile Money
+L'agence entre son numéro Momo dans les paramètres
+Le locataire clique "Payer" → le paiement va directement sur le compte Momo de l'agence
+On garde une trace de chaque transaction
+Un reçu PDF est généré automatiquement après confirmation du paiement
+Nouvelles tables Supabase
+
+paiements          → locataire, ménage, mois, montant, statut, référence_momo
+factures           → paiement, numéro facture, date, montant
+Et on ajoute sur profiles :
+
+
+momo_numero        → numéro Momo de l'agence
+commission_taux    → défaut 10%
+Intégration Momo
+Pour le Bénin, j'utiliserais Kkiapay ou FedaPay — tous deux supportent les paiements Mobile Money (Orange Money, MTN, Moov) directement avec un numéro de destinataire. Tu as déjà un compte sur l'une de ces plateformes, ou tu veux qu'on regarde quelle API est la plus adaptée ?
+
+Ordre d'implémentation suggéré
+Ajout du rôle agence + locataire dans Supabase + auth
+Création de compte locataire par l'agence (téléphone + mdp auto)
+Dashboard locataire (mois payés/non payés)
+Intégration Momo (paiement + confirmation)
+Génération de reçu après paiement
+Dashboard commission 10% pour l'agence

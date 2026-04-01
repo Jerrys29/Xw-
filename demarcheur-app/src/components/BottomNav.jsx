@@ -3,16 +3,23 @@ import { useState, useEffect } from 'react'
 import { LayoutDashboard, Building2, Users, Home, UserCircle, ShieldCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
-const tabs = [
-  { to: '/',              icon: LayoutDashboard, label: 'Accueil' },
-  { to: '/proprietaires', icon: Users,           label: 'Proprio' },
-  { to: '/maisons',       icon: Building2,       label: 'Maisons' },
-  { to: '/locataires',    icon: Home,            label: 'Locataires' },
-  { to: '/profil',        icon: UserCircle,      label: 'Profil' },
+const agenceTabs = [
+  { to: '/',              icon: LayoutDashboard, label: 'Accueil'    },
+  { to: '/proprietaires', icon: Users,           label: 'Proprio'   },
+  { to: '/maisons',       icon: Building2,       label: 'Maisons'   },
+  { to: '/locataires',    icon: Home,            label: 'Locataires'},
+  { to: '/profil',        icon: UserCircle,      label: 'Profil'    },
 ]
 
-export default function BottomNav({ isAdmin }) {
+const locataireTabs = [
+  { to: '/',       icon: Home,        label: 'Accueil' },
+  { to: '/profil', icon: UserCircle,  label: 'Profil'  },
+]
+
+export default function BottomNav({ role, isAdmin }) {
   const [pendingCount, setPendingCount] = useState(0)
+  const isLocataire = role === 'locataire'
+  const tabs = isLocataire ? locataireTabs : agenceTabs
 
   useEffect(() => {
     if (!isAdmin) return
@@ -59,7 +66,9 @@ export default function BottomNav({ isAdmin }) {
             )}
           </NavLink>
         ))}
-        {isAdmin && (
+
+        {/* Onglet Admin (agence uniquement) */}
+        {isAdmin && !isLocataire && (
           <NavLink to="/admin"
             className={({ isActive }) =>
               `flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors ${

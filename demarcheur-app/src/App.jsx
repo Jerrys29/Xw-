@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { usePushNotifications } from './hooks/usePushNotifications'
@@ -28,6 +28,7 @@ import LocataireAssign    from './pages/LocataireAssign'
 import Locataires         from './pages/Locataires'
 import Profile            from './pages/Profile'
 import Admin              from './pages/Admin'
+import LocataireDashboard from './pages/LocataireDashboard'
 
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password', '/cgu', '/auth/callback']
 
@@ -39,7 +40,6 @@ function AppShell() {
   usePushNotifications()
   const isAuth = AUTH_ROUTES.includes(location.pathname)
 
-  // Retry auto si user connecté mais profil pas encore chargé
   useEffect(() => {
     if (user && !profile) {
       const t = setTimeout(() => refreshProfile(), 2000)
@@ -47,10 +47,8 @@ function AppShell() {
     }
   }, [user, profile])
 
-  // Non connecté → login
   if (!user && !isAuth) return <Navigate to="/login" replace />
 
-  // Pages publiques
   if (isAuth) return (
     <Routes>
       <Route path="/login"           element={<Login />} />
@@ -62,7 +60,6 @@ function AppShell() {
     </Routes>
   )
 
-  // Profil pas encore chargé → spinner (pas ComptePending)
   if (user && !profile) return (
     <div className="min-h-screen flex items-center justify-center" style={{background:'linear-gradient(135deg,#0a1628 0%,#0d2347 50%,#0a1628 100%)'}}>
       <div className="text-center text-white">
@@ -72,13 +69,27 @@ function AppShell() {
     </div>
   )
 
-  // Compte en attente ou suspendu
-  if (profile.statut !== 'actif') {
-    return <ComptePending statut={profile.statut} />
-  }
+  if (profile.statut !== 'actif') return <ComptePending statut={profile.statut} />
 
-  const isAdmin = profile?.role === 'admin'
+  const isAdmin     = profile.role === 'admin'
+  const isLocataire = profile.role === 'locataire'
 
+  // Shell locataire — navigation minimaliste
+  if (isLocataire) return (
+    <div className="flex min-h-screen bg-slate-50">
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <OfflineBanner />
+        <Routes>
+          <Route path="/"      element={<LocataireDashboard />} />
+          <Route path="/profil" element={<Profile />} />
+          <Route path="*"      element={<Navigate to="/" />} />
+        </Routes>
+        <BottomNav role={profile.role} />
+      </div>
+    </div>
+  )
+
+  // Shell agence / admin
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar isAdmin={isAdmin} />
@@ -104,7 +115,7 @@ function AppShell() {
           {isAdmin && <Route path="/admin"                            element={<Admin />} />}
           <Route path="*"                                              element={<Navigate to="/" />} />
         </Routes>
-        <BottomNav isAdmin={isAdmin} />
+        <BottomNav role={profile.role} isAdmin={isAdmin} />
       </div>
     </div>
   )
