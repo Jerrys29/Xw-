@@ -15,6 +15,7 @@ export default function Profile() {
   const [nom,       setNom]       = useState(user?.user_metadata?.nom       ?? '')
   const [telephone, setTel]       = useState(user?.user_metadata?.telephone  ?? '')
   const [fedapayKey, setFedapayKey] = useState(profile?.fedapay_public_key  ?? '')
+  const [momoNumero, setMomoNumero] = useState(profile?.momo_numero         ?? '')
   const [commission, setCommission] = useState(profile?.commission_taux     ?? 10)
 
   const [loading,        setLoading]        = useState(false)
@@ -38,6 +39,7 @@ export default function Profile() {
         telephone: telTrim,
         ...(isAgence && {
           fedapay_public_key: fedapayKey.trim(),
+          momo_numero:        momoNumero.trim(),
           commission_taux:    Number(commission),
         }),
       }

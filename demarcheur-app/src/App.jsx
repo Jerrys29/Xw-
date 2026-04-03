@@ -7,8 +7,9 @@ import Sidebar        from './components/Sidebar'
 import BottomNav      from './components/BottomNav'
 import OfflineBanner  from './components/OfflineBanner'
 
-import Login          from './pages/auth/Login'
-import Register       from './pages/auth/Register'
+import Login            from './pages/auth/Login'
+import LocataireLogin  from './pages/auth/LocataireLogin'
+import Register        from './pages/auth/Register'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import AuthCallback   from './pages/auth/AuthCallback'
 import ResetPassword  from './pages/auth/ResetPassword'
@@ -30,7 +31,7 @@ import Profile            from './pages/Profile'
 import Admin              from './pages/Admin'
 import LocataireDashboard from './pages/LocataireDashboard'
 
-const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password', '/cgu', '/auth/callback']
+const AUTH_ROUTES = ['/login', '/locataire-login', '/register', '/forgot-password', '/reset-password', '/cgu', '/auth/callback']
 
 function AppShell() {
   const user           = useAuthStore(s => s.user)
@@ -51,7 +52,8 @@ function AppShell() {
 
   if (isAuth) return (
     <Routes>
-      <Route path="/login"           element={<Login />} />
+      <Route path="/login"            element={<Login />} />
+      <Route path="/locataire-login" element={<LocataireLogin />} />
       <Route path="/register"        element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/cgu"             element={<CGU />} />
@@ -69,10 +71,11 @@ function AppShell() {
     </div>
   )
 
-  if (profile.statut !== 'actif') return <ComptePending statut={profile.statut} />
-
   const isAdmin     = profile.role === 'admin'
-  const isLocataire = profile.role === 'locataire'
+  const isLocataire = profile.role === 'locataire' || profile.role === 'user'
+
+  // Si le compte n'est pas actif (uniquement pour les agences, les locataires sont actifs par défaut)
+  if (!isLocataire && profile.statut !== 'actif') return <ComptePending statut={profile.statut} />
 
   // Shell locataire — navigation minimaliste
   if (isLocataire) return (

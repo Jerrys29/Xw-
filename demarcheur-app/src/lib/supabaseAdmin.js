@@ -11,6 +11,11 @@ const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY
 
 export const supabaseAdmin = serviceKey
   ? createClient(url, serviceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+        storageKey: 'supabase-admin',
+      },
     })
   : null

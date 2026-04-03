@@ -5,9 +5,9 @@
 
 -- 1. MISE À JOUR TABLE PROFILES
 -- Nouvelles colonnes
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS momo_numero       text;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS kkiapay_public_key text;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS commission_taux   numeric DEFAULT 10;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS momo_numero           text;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS fedapay_public_key    text;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS commission_taux       numeric DEFAULT 10;
 
 -- Étendre la contrainte CHECK sur le rôle (ajoute agence et locataire)
 ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
@@ -15,7 +15,6 @@ ALTER TABLE profiles ADD CONSTRAINT profiles_role_check
   CHECK (role IN ('user','admin','agence','locataire'));
 
 -- Mettre à jour le trigger pour qu'il supporte ON CONFLICT
--- (nécessaire car la fonction RPC crée d'abord le profil elle-même)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
@@ -32,7 +31,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Politique : un locataire peut voir le profil de son agence (pour clé KKiapay / Momo)
+-- Politique : un locataire peut voir le profil de son agence (pour clé FedaPay / Momo)
 DROP POLICY IF EXISTS "profile_agence_locataire" ON profiles;
 CREATE POLICY "profile_agence_locataire" ON profiles FOR SELECT USING (
   EXISTS (
@@ -51,15 +50,17 @@ CREATE POLICY "locataire_self" ON locataires FOR SELECT USING (profile_id = auth
 
 -- 3. TABLE PAIEMENTS
 CREATE TABLE IF NOT EXISTS paiements (
-  id             uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  locataire_id   uuid REFERENCES locataires(id) ON DELETE CASCADE,
-  menage_id      uuid REFERENCES menages(id)    ON DELETE CASCADE,
-  agence_id      uuid REFERENCES profiles(id)   ON DELETE CASCADE,
-  mois           text    NOT NULL,  -- format "2025-01"
-  montant        numeric NOT NULL,
-  statut         text DEFAULT 'en_attente' CHECK (statut IN ('en_attente','payé','échoué')),
-  reference_momo text,
-  created_at     timestamptz DEFAULT now()
+  id                uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  locataire_id      uuid REFERENCES locataires(id) ON DELETE CASCADE,
+  menage_id         uuid REFERENCES menages(id)    ON DELETE CASCADE,
+  agence_id         uuid REFERENCES profiles(id)   ON DELETE CASCADE,
+  mois              integer NOT NULL,
+  annee             integer NOT NULL,
+  montant           numeric NOT NULL,
+  statut            text DEFAULT 'en_attente' CHECK (statut IN ('en_attente','payé','échoué')),
+  reference_fedapay text,
+  transaction_id    text,
+  created_at        timestamptz DEFAULT now()
 );
 ALTER TABLE paiements ENABLE ROW LEVEL SECURITY;
 
@@ -145,8 +146,6 @@ BEGIN
     '', '', '', ''
   ) RETURNING id INTO v_user_id;
 
-  -- Le trigger handle_new_user crée le profil (ON CONFLICT DO NOTHING)
-  -- On met à jour pour définir le rôle locataire et activer le compte
   UPDATE public.profiles
   SET nom = p_nom, telephone = p_phone,
       statut = 'actif', role = 'locataire', cgu_acceptees = true
@@ -156,7 +155,6 @@ BEGIN
 
 EXCEPTION
   WHEN unique_violation THEN
-    -- Compte déjà existant pour ce numéro → retourner l'ID existant
     SELECT id INTO v_user_id FROM auth.users WHERE email = v_email;
     RETURN v_user_id;
 END;
