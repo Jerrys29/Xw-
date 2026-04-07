@@ -33,9 +33,21 @@ export const useAuthStore = create((set, get) => ({
       password,
       options: {
         data: { nom, telephone, cgu_acceptees },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
+
+    // Si la confirmation email est désactivée dans Supabase,
+    // une session est retournée immédiatement → on active le compte directement
+    if (!error && data.session && data.user) {
+      await supabase
+        .from('profiles')
+        .update({ statut: 'actif', role: 'agence' })
+        .eq('id', data.user.id)
+      const profile = await fetchProfile(data.user.id)
+      set({ session: data.session, user: data.user, profile })
+    }
+
     return { data, error }
   },
 

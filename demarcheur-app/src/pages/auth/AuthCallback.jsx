@@ -13,24 +13,35 @@ export default function AuthCallback() {
     async function handleCallback() {
       try {
         // Supabase traite automatiquement le hash ou le token dans l'URL
+        let session = null
         const { data, error } = await supabase.auth.getSession()
 
         if (error || !data.session) {
           // Essayer de récupérer le token dans le hash URL
           const hash = window.location.hash
           if (hash.includes('access_token')) {
-            // Laisser Supabase parser le hash
             await new Promise(resolve => setTimeout(resolve, 1000))
             const { data: d2 } = await supabase.auth.getSession()
-            if (d2.session) {
-              await refreshProfile()
-              setStatus('success')
-              setTimeout(() => navigate('/'), 2000)
-              return
-            }
+            if (d2.session) session = d2.session
           }
-          setStatus('error')
-          return
+          if (!session) { setStatus('error'); return }
+        } else {
+          session = data.session
+        }
+
+        // Activer le compte agence dès confirmation email
+        // (uniquement pour les nouveaux comptes encore en_attente)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('statut, role')
+          .eq('id', session.user.id)
+          .maybeSingle()
+
+        if (profile && profile.statut === 'en_attente') {
+          await supabase
+            .from('profiles')
+            .update({ statut: 'actif', role: 'agence' })
+            .eq('id', session.user.id)
         }
 
         await refreshProfile()

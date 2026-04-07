@@ -22,7 +22,7 @@ export default function Register() {
     if (form.password !== form.confirm) { setError('Les mots de passe ne correspondent pas.'); return }
     if (form.password.length < 6) { setError('Le mot de passe doit faire au moins 6 caractères.'); return }
     setLoading(true)
-    const { error } = await signUp({
+    const { data, error } = await signUp({
       email: form.email, password: form.password,
       nom: form.nom, telephone: form.telephone,
       cgu_acceptees: true,
@@ -31,31 +31,26 @@ export default function Register() {
     if (error) {
       if (error.message.includes('already registered')) setError('Cet email est déjà utilisé.')
       else setError('Une erreur est survenue. Réessayez.')
-    } else setSuccess(true)
+    } else if (data?.session) {
+      // Confirmation email désactivée → session immédiate → dashboard direct
+      navigate('/')
+    } else {
+      // Confirmation email encore active → afficher message simplifié
+      setSuccess(true)
+    }
   }
 
   if (success) return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{background:'linear-gradient(135deg,#0a1628 0%,#0d2347 50%,#0a1628 100%)'}}>
       <div className="bg-white rounded-3xl p-8 shadow-2xl text-center max-w-sm w-full">
         <div className="text-5xl mb-4">📧</div>
-        <h2 className="text-xl font-bold text-slate-900 mb-2">Vérifiez votre email !</h2>
-        <p className="text-slate-600 text-sm mb-3">
+        <h2 className="text-xl font-bold text-slate-900 mb-2">Confirmez votre email</h2>
+        <p className="text-slate-600 text-sm mb-6">
           Un lien de confirmation a été envoyé à <strong>{form.email}</strong>.
-        </p>
-        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-5 text-left">
-          <p className="text-blue-800 text-xs font-bold mb-1">Étapes :</p>
-          <ol className="text-blue-700 text-xs space-y-1 list-decimal list-inside">
-            <li>Ouvrez votre boîte email</li>
-            <li>Cliquez sur le lien de confirmation</li>
-            <li>Revenez ici et connectez-vous</li>
-            <li>Demandez l&apos;activation de votre compte</li>
-          </ol>
-        </div>
-        <p className="text-slate-400 text-xs mb-5">
-          Votre accès sera activé sous 24h après confirmation de l&apos;administrateur.
+          Cliquez dessus pour accéder à votre espace.
         </p>
         <Link to="/login" className="block w-full py-4 bg-blue-600 text-white font-bold rounded-xl text-center">
-          Aller à la connexion
+          Retour à la connexion
         </Link>
       </div>
     </div>
