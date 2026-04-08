@@ -3,9 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import PageHeader from '../components/PageHeader'
 import StatusBadge from '../components/StatusBadge'
-import { User, Phone, Pencil, Trash2, UserPlus, UserMinus, Gauge, Clock, CalendarDays } from 'lucide-react'
+import { User, Phone, Pencil, Trash2, UserPlus, UserMinus, Gauge, Clock, CalendarDays, Share2, Copy, CheckCircle2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+
+function genPassword() {
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789'
+  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+}
 
 export default function MenageDetail() {
   const { maisonId, menageId } = useParams()
@@ -17,6 +22,12 @@ export default function MenageDetail() {
   const [confirm,   setConfirm]   = useState(false)
   const [liberConfirm, setLiberConfirm] = useState(false)
   const [dateSortie, setDateSortie] = useState(new Date().toISOString().split('T')[0])
+  
+  // Nouveaux states pour partager les accès
+  const [shareModal, setShareModal] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [sharing, setSharing] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   async function load() {
     const [{ data: m }, { data: loc }, { data: mais }, { data: hist }] = await Promise.all([
@@ -32,6 +43,40 @@ export default function MenageDetail() {
   useEffect(() => { load() }, [menageId])
 
   if (!menage) return <div className="flex-1 flex items-center justify-center text-slate-400">Chargement…</div>
+
+  async function handleShareAccess() {
+    if (!locataire || !locataire.profile_id) {
+      alert("Ce locataire n'a pas de compte lié.")
+      return
+    }
+    setSharing(true)
+    const pwd = genPassword()
+    const { error } = await supabase.rpc('reset_locataire_password', {
+      p_profile_id: locataire.profile_id,
+      p_password: pwd
+    })
+    
+    setSharing(false)
+    if (error) {
+      alert('Erreur: ' + error.message)
+      return
+    }
+    
+    setNewPassword(pwd)
+    setShareModal(true)
+  }
+
+  function shareOrCopy() {
+    const lienConnexion = `${window.location.origin}/locataire-login`
+    const msg = `🏠 Votre accès locataire\n\n📱 Téléphone : ${locataire.telephone}\n🔑 Mot de passe : ${newPassword}\n\n🔗 Connectez-vous ici :\n${lienConnexion}\n\n⚠️ Gardez ces informations en sécurité.`
+    if (navigator.share) {
+      navigator.share({ title: 'Accès locataire', text: msg }).catch(()=>{})
+    } else {
+      navigator.clipboard.writeText(msg)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   async function liberer() {
     // 1. Sauvegarder dans l'historique
@@ -117,6 +162,47 @@ export default function MenageDetail() {
         </Modal>
       )}
 
+      {/* Modale de partage */}
+      {shareModal && (
+        <Modal onClose={() => setShareModal(false)}>
+          <div className="flex flex-col items-center text-center gap-3 mb-6">
+            <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center">
+              <CheckCircle2 size={32} className="text-emerald-600" />
+            </div>
+            <div>
+              <p className="font-black text-slate-900 text-xl">Accès générés</p>
+              <p className="text-sm text-slate-500 mt-1">Partagez ces identifiants au locataire.</p>
+            </div>
+          </div>
+
+          <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-200">
+            <p className="text-xs text-slate-500 mb-1">Téléphone</p>
+            <p className="font-bold text-slate-900 mb-3">{locataire?.telephone}</p>
+            
+            <p className="text-xs text-slate-500 mb-1">Nouveau mot de passe</p>
+            <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-200">
+              <p className="font-mono font-bold text-blue-600 tracking-widest">{newPassword}</p>
+              <button onClick={() => {
+                navigator.clipboard.writeText(newPassword)
+                setCopied(true)
+                setTimeout(() => setCopied(false), 2000)
+              }} className="text-slate-400">
+                {copied ? <CheckCircle2 size={18} className="text-emerald-500"/> : <Copy size={18}/>}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <button onClick={shareOrCopy} className="w-full py-4 bg-emerald-600 text-white font-bold rounded-xl flex justify-center items-center gap-2">
+              <Share2 size={18} /> {navigator.share ? "Envoyer au locataire" : "Copier le message"}
+            </button>
+            <button onClick={() => setShareModal(false)} className="w-full py-4 bg-slate-100 text-slate-600 font-bold rounded-xl">
+              Fermer
+            </button>
+          </div>
+        </Modal>
+      )}
+
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-24 md:pb-6 max-w-3xl mx-auto w-full space-y-4">
 
         {/* Statut + loyer */}
@@ -155,17 +241,25 @@ export default function MenageDetail() {
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
-                {locataire.telephone && (
-                  <a href={`tel:${locataire.telephone}`}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-50 text-emerald-700 rounded-xl font-bold text-sm">
-                    <Phone size={16} /> Appeler
-                  </a>
+              <div className="flex flex-col gap-2 mt-2">
+                <div className="flex gap-2">
+                  {locataire.telephone && (
+                    <a href={`tel:${locataire.telephone}`}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-50 text-emerald-700 rounded-xl font-bold text-sm">
+                      <Phone size={16} /> Appeler
+                    </a>
+                  )}
+                  <button onClick={() => setLiberConfirm(true)}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-orange-50 text-orange-600 rounded-xl font-bold text-sm">
+                    <UserMinus size={16} /> Libérer
+                  </button>
+                </div>
+                {locataire.profile_id && (
+                  <button onClick={handleShareAccess} disabled={sharing}
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm active:opacity-70 disabled:opacity-50">
+                    <Share2 size={16} /> {sharing ? "Génération..." : "Réinitialiser et partager les accès"}
+                  </button>
                 )}
-                <button onClick={() => setLiberConfirm(true)}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-orange-50 text-orange-600 rounded-xl font-bold text-sm">
-                  <UserMinus size={16} /> Libérer le logement
-                </button>
               </div>
             </div>
           ) : (

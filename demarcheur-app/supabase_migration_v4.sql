@@ -25,7 +25,7 @@ CREATE OR REPLACE FUNCTION public.create_locataire_account(
 ) RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
   v_user_id uuid;
