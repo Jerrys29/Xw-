@@ -75,7 +75,7 @@ function AppShell() {
   const isLocataire = profile.role === 'locataire' || profile.role === 'user'
 
   // Si le compte n'est pas actif (uniquement pour les agences, les locataires sont actifs par défaut)
-  if (!isLocataire && profile.statut !== 'actif') return <ComptePending statut={profile.statut} />
+  // if (!isLocataire && profile.statut !== 'actif') return <ComptePending statut={profile.statut} />
 
   // Shell locataire — navigation minimaliste
   if (isLocataire) return (
