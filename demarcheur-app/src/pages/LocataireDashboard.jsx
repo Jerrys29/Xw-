@@ -205,29 +205,6 @@ export default function LocataireDashboard() {
               <p className="text-sm text-slate-500 truncate">{maison?.ville ?? '—'} · {maison?.quartier ?? '—'}</p>
             </div>
           </div>
-          
-          {(menage?.compteur_elec || menage?.compteur_eau) && (
-            <div className="mt-5 pt-5 border-t border-slate-50 grid grid-cols-2 gap-4">
-              {menage.compteur_elec && (
-                <div className="flex items-center gap-2">
-                  <Gauge size={14} className="text-amber-500" />
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">SBEE</p>
-                    <p className="text-sm font-bold text-slate-800 truncate">{menage.compteur_elec} kWh</p>
-                  </div>
-                </div>
-              )}
-              {menage.compteur_eau && (
-                <div className="flex items-center gap-2">
-                  <Gauge size={14} className="text-blue-500" />
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">SONEB</p>
-                    <p className="text-sm font-bold text-slate-800 truncate">{menage.compteur_eau} m³</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* ── Historique ── */}
