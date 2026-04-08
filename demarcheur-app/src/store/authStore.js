@@ -33,7 +33,7 @@ export const useAuthStore = create((set, get) => ({
       password,
       options: {
         data: { nom, telephone, cgu_acceptees },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
 

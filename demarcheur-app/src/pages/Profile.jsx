@@ -37,11 +37,12 @@ export default function Profile() {
       const profileUpdate = {
         nom:       nomTrim,
         telephone: telTrim,
-        ...(isAgence && {
-          fedapay_public_key: fedapayKey.trim(),
-          momo_numero:        momoNumero.trim(),
-          commission_taux:    Number(commission),
-        }),
+        // Config paiement désactivée — sera gérée côté back
+        // ...(isAgence && {
+        //   fedapay_public_key: fedapayKey.trim(),
+        //   momo_numero:        momoNumero.trim(),
+        //   commission_taux:    Number(commission),
+        // }),
       }
 
       await Promise.race([
@@ -132,49 +133,7 @@ export default function Profile() {
             <p className="text-xs text-slate-400 mt-1 ml-1">L&apos;email ne peut pas être modifié</p>
           </div>
 
-          {/* ── Config paiement (agence uniquement) ── */}
-          {isAgence && (
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-4">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <CreditCard size={13} /> Configuration paiement FedaPay
-              </p>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-600 mb-2">
-                  Clé publique FedaPay
-                </label>
-                <div className="relative">
-                  <Key size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    value={fedapayKey}
-                    onChange={e => setFedapayKey(e.target.value)}
-                    placeholder="pk_sandbox_xxxxxxxxxxxx"
-                    className="w-full bg-white border-2 border-slate-200 focus:border-blue-500 rounded-2xl pl-11 pr-4 py-4 text-base outline-none font-mono text-sm"
-                  />
-                </div>
-                <p className="text-xs text-slate-400 mt-1 ml-1">
-                  Trouvez votre clé sur{' '}
-                  <a href="https://app.fedapay.com" target="_blank" rel="noreferrer"
-                    className="text-blue-500 underline">app.fedapay.com</a>
-                  {' '}→ API
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-600 mb-2">
-                  Taux de commission (%)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={commission}
-                  onChange={e => setCommission(e.target.value)}
-                  className="w-full bg-white border-2 border-slate-200 focus:border-blue-500 rounded-2xl px-4 py-4 text-base outline-none"
-                />
-              </div>
-            </div>
-          )}
+          {/* ── Config paiement désactivée — l'API FedaPay sera gérée côté back ── */}
 
           <button type="submit" disabled={loading}
             className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 disabled:bg-slate-200 disabled:text-slate-400 text-white text-base font-bold rounded-2xl">

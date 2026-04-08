@@ -11,7 +11,7 @@ export default function Register() {
   const [showPwd, setShowPwd] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
-  const [success, setSuccess] = useState(false)
+  // const [success, setSuccess] = useState(false)
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
@@ -31,15 +31,13 @@ export default function Register() {
     if (error) {
       if (error.message.includes('already registered')) setError('Cet email est déjà utilisé.')
       else setError('Une erreur est survenue. Réessayez.')
-    } else if (data?.session) {
-      // Confirmation email désactivée → session immédiate → dashboard direct
-      navigate('/')
     } else {
-      // Confirmation email encore active → afficher message simplifié
-      setSuccess(true)
+      // Inscription réussie → connexion automatique → dashboard direct
+      navigate('/')
     }
   }
 
+  /* — Confirmation email désactivée, on connecte directement —
   if (success) return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{background:'linear-gradient(135deg,#0a1628 0%,#0d2347 50%,#0a1628 100%)'}}>
       <div className="bg-white rounded-3xl p-8 shadow-2xl text-center max-w-sm w-full">
@@ -55,6 +53,7 @@ export default function Register() {
       </div>
     </div>
   )
+  */
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{background:'linear-gradient(135deg,#0a1628 0%,#0d2347 50%,#0a1628 100%)'}}>

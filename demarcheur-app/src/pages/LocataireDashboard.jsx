@@ -74,7 +74,7 @@ export default function LocataireDashboard() {
         supabase.from('menages').select('*').eq('id', loc.menage_id).maybeSingle(),
         supabase.from('maisons').select('nom,quartier,ville').eq('id', loc.maison_id).maybeSingle(),
         supabase.from('paiements').select('*').eq('locataire_id', loc.id).order('annee', { ascending: false }).order('mois', { ascending: false }),
-        loc.user_id ? supabase.from('profiles').select('nom,fedapay_public_key,momo_numero').eq('id', loc.user_id).maybeSingle() : Promise.resolve({ data: null })
+        loc.user_id ? supabase.from('profiles').select('nom,momo_numero').eq('id', loc.user_id).maybeSingle() : Promise.resolve({ data: null })
       ])
 
       setMenage(mRes.data)
@@ -167,23 +167,17 @@ export default function LocataireDashboard() {
             <span className="text-lg font-bold text-slate-400">F CFA</span>
           </div>
 
-          {!estPaye && agence?.fedapay_public_key ? (
+          {!estPaye && (
             <PayButton
               locataire={locataire}
               menage={menage}
               mois={moisCourant.mois}
               annee={moisCourant.annee}
               montant={loyer}
-              publicKey={agence.fedapay_public_key}
+              publicKey={import.meta.env.VITE_FEDAPAY_PUBLIC_KEY}
               profile={profile}
               onSuccess={load}
             />
-          ) : !estPaye && (
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <p className="text-sm text-slate-500 text-center italic">
-                Paiement Mobile Money indisponible pour le moment.
-              </p>
-            </div>
           )}
 
           {estPaye && (
@@ -413,9 +407,9 @@ function PayButton({ locataire, menage, mois, annee, montant, publicKey, profile
                 paiement_id:    paiement.id,
                 numero_facture: num,
                 montant,
-                locataire_nom:  profile.nom ?? locataire.nom,
-                menage_nom:     menage?.numero,
-                maison_nom:     'Logement', // On pourrait charger le nom de la maison ici
+                locataire_nom:  profile.nom ?? locataire.nom ?? '',
+                menage_nom:     menage?.numero ?? '',
+                maison_nom:     'Logement',
               })
             }
             

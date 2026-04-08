@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { offlineInsert, offlineUpdate } from '../lib/offlineSave'
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
 import PageHeader from '../components/PageHeader'
-import { UserPlus, WifiOff, Copy, CheckCircle2, ShieldCheck, Share2, Key } from 'lucide-react'
+import { UserPlus, WifiOff, Copy, CheckCircle2, ShieldCheck, Share2, Key, RefreshCw } from 'lucide-react'
 
 function genPassword() {
   const chars = 'abcdefghjkmnpqrstuvwxyz23456789'
@@ -16,15 +16,15 @@ export default function LocataireAssign() {
   const navigate = useNavigate()
   const user = useAuthStore(s => s.user)
 
-  const [nom,        setNom]        = useState('')
-  const [tel,        setTel]        = useState('')
-  const [loyer,      setLoyer]      = useState('')
+  const [nom, setNom] = useState('')
+  const [tel, setTel] = useState('')
+  const [loyer, setLoyer] = useState('')
   const [dateEntree, setDateEntree] = useState(new Date().toISOString().split('T')[0])
   const [creerCompte, setCreerCompte] = useState(true) // Actif par défaut comme demandé
 
-  const [loading,      setLoading]      = useState(false)
+  const [loading, setLoading] = useState(false)
   const [savedOffline, setSavedOffline] = useState(false)
-  const [error,        setError]        = useState('')
+  const [error, setError] = useState('')
 
   // Pré-remplir le loyer
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function LocataireAssign() {
 
   // Résultat création compte
   const [compteCreé, setCompteCreé] = useState(null) // { telephone, password }
-  const [copied,     setCopied]     = useState(false)
+  const [copied, setCopied] = useState(false)
 
   async function submit(e) {
     e.preventDefault()
@@ -43,7 +43,7 @@ export default function LocataireAssign() {
     setLoading(true)
 
     const telephone = tel.trim()
-    const nomFinal  = nom.trim() || 'Locataire inconnu'
+    const nomFinal = nom.trim() || 'Locataire inconnu'
     const loyerFinal = Number(loyer) || 0
 
     try {
@@ -53,9 +53,9 @@ export default function LocataireAssign() {
       /* ── Création du compte locataire via RPC ── */
       if (creerCompte && telephone) {
         const { data: newUserId, error: rpcErr } = await supabase.rpc('create_locataire_account', {
-          p_phone:    telephone,
+          p_phone: telephone,
           p_password: passwordGenerated,
-          p_nom:      nomFinal
+          p_nom: nomFinal
         })
 
         if (rpcErr) throw rpcErr
@@ -65,19 +65,19 @@ export default function LocataireAssign() {
 
       /* ── Enregistrement locataire + ménage ── */
       const locataireData = {
-        menage_id:   menageId,
-        maison_id:   maisonId,
-        user_id:     user.id,
-        nom:         nomFinal,
-        telephone:   telephone || '',
+        menage_id: menageId,
+        maison_id: maisonId,
+        user_id: user.id,
+        nom: nomFinal,
+        telephone: telephone || '',
         date_entree: dateEntree || null,
-        loyer:       loyerFinal
+        loyer: loyerFinal
       }
       if (profileId) locataireData.profile_id = profileId
 
       // On insère le locataire
       const { error: locErr } = await supabase.from('locataires').insert(locataireData)
-      
+
       if (locErr) {
         const { offline } = await offlineInsert('locataires', locataireData, 'locataires')
         if (offline) {
@@ -115,7 +115,7 @@ export default function LocataireAssign() {
     const lienConnexion = `${window.location.origin}/locataire-login`
 
     const messagePartage =
-`🏠 Votre accès locataire
+      `🏠 Votre accès locataire
 
 📱 Téléphone : ${compteCreé.telephone}
 🔑 Mot de passe : ${compteCreé.password}
@@ -130,7 +130,7 @@ ${lienConnexion}
         try {
           await navigator.share({
             title: 'Accès locataire',
-            text:  messagePartage,
+            text: messagePartage,
           })
         } catch (_) { /* annulé par l'utilisateur */ }
       } else {
@@ -215,10 +215,10 @@ ${lienConnexion}
           </div>
 
           <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex gap-3">
-             <Key size={20} className="text-amber-500 flex-shrink-0" />
-             <p className="text-xs text-amber-800 font-medium">
-               Attention : ce mot de passe ne sera plus jamais affiché. Veuillez le copier ou le partager maintenant.
-             </p>
+            <Key size={20} className="text-amber-500 flex-shrink-0" />
+            <p className="text-xs text-amber-800 font-medium">
+              Attention : ce mot de passe ne sera plus jamais affiché. Veuillez le copier ou le partager maintenant.
+            </p>
           </div>
 
           <div className="pt-4 space-y-3">
@@ -289,9 +289,8 @@ ${lienConnexion}
           <div className="pt-2">
             <button type="button"
               onClick={() => setCreerCompte(v => !v)}
-              className={`w-full flex items-center gap-4 px-5 py-5 rounded-3xl border-2 text-left transition-all ${
-                creerCompte ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-50' : 'border-slate-100 bg-white'
-              }`}
+              className={`w-full flex items-center gap-4 px-5 py-5 rounded-3xl border-2 text-left transition-all ${creerCompte ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-50' : 'border-slate-100 bg-white'
+                }`}
             >
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${creerCompte ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
                 <ShieldCheck size={24} />
@@ -314,11 +313,11 @@ ${lienConnexion}
         <button type="submit" disabled={loading}
           className="w-full py-5 bg-slate-900 disabled:bg-slate-200 disabled:text-slate-400 text-white text-lg font-black rounded-3xl mt-4 shadow-xl shadow-slate-200 active:scale-95 transition-all">
           {loading ? (
-             <div className="flex items-center justify-center gap-3">
-               <RefreshCw size={20} className="animate-spin" />
-               <span>Enregistrement…</span>
-             </div>
-          ) : 'Confirmer l&apos;occupation'}
+            <div className="flex items-center justify-center gap-3">
+              <RefreshCw size={20} className="animate-spin" />
+              <span>Enregistrement…</span>
+            </div>
+          ) : 'Assigner le locataire'}
         </button>
       </form>
     </div>
