@@ -201,8 +201,8 @@ export default function LocataireDashboard() {
               <Building2 size={24} className="text-blue-500" />
             </div>
             <div className="min-w-0">
-              <p className="font-black text-slate-900 truncate">Appartement {menage?.numero ?? '—'}</p>
-              <p className="text-sm text-slate-500 truncate">{maison?.nom ?? '—'} · {maison?.quartier}</p>
+              <p className="font-black text-slate-900 truncate">Ménage {menage?.numero ?? '—'}</p>
+              <p className="text-sm text-slate-500 truncate">{maison?.ville ?? '—'} · {maison?.quartier ?? '—'}</p>
             </div>
           </div>
           
