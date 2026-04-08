@@ -121,7 +121,7 @@ export default function LocataireDashboard() {
     </div>
   )
 
-  const loyer        = Number(menage?.loyer ?? 0)
+  const loyer        = Number(locataire?.loyer ?? menage?.loyer ?? 0)
   const now          = new Date()
   const moisCourant  = { mois: now.getMonth() + 1, annee: now.getFullYear() }
   const paieCourant  = paiements.find(p => p.mois === moisCourant.mois && p.annee === moisCourant.annee && p.statut === 'payé')
